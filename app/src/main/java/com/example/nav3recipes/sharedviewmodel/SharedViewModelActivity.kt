@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -71,7 +72,7 @@ class SharedViewModelActivity : ComponentActivity() {
                         val viewModel = viewModel<CounterViewModel>()
 
                         ContentRed("Parent screen") {
-                            Button(onClick = { viewModel.count++ }) {
+                            Button(onClick = { viewModel.doCount() }) {
                                 Text("Count: ${viewModel.count}")
                             }
                             Button(onClick = dropUnlessResumed { backStack.add(ChildScreen) }) {
@@ -91,10 +92,10 @@ class SharedViewModelActivity : ComponentActivity() {
                         val standaloneViewModel = viewModel<CounterViewModel>()
 
                         ContentBlue("Child screen") {
-                            Button(onClick = { parentViewModel.count++ }) {
+                            Button(onClick = { parentViewModel.doCount() }) {
                                 Text("Parent count: ${parentViewModel.count}")
                             }
-                            Button(onClick = { standaloneViewModel.count++ }) {
+                            Button(onClick = { standaloneViewModel.doCount() }) {
                                 Text("Standalone Count: ${standaloneViewModel.count}")
                             }
                             Button(onClick = dropUnlessResumed { backStack.add(StandaloneScreen) }) {
@@ -107,7 +108,7 @@ class SharedViewModelActivity : ComponentActivity() {
 
                         ContentGreen("Standalone screen") {
                             Button(onClick = {
-                                viewModel.count++
+                                viewModel.doCount()
                             }) {
                                 Text("Count: ${viewModel.count}")
                             }
@@ -121,6 +122,13 @@ class SharedViewModelActivity : ComponentActivity() {
 
 fun NavKey.toContentKey() = this.toString()
 
-class CounterViewModel : ViewModel() {
-    var count by mutableIntStateOf(0)
+class CounterViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
+    private val _count = savedStateHandle.get<Int>("count")
+    var count by mutableIntStateOf(_count ?: 0)
+        private set
+
+    fun doCount() {
+        count++
+        savedStateHandle.set("count", count)
+    }
 }
